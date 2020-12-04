@@ -1,0 +1,1497 @@
+---
+title: "Untitled"
+author: "Julio Iturra"
+date: "11-11-2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+1. Tabla descriptivos por indicador: Variable, Item, Valores, %
+2. Impuesto a los ricos: likert plot por year
+3. Estratificación según nivel educacional (x) y año (z) como línea.
+4. Preferencia de pago de impuesto por los ricos (y) por tramos de ingresos (x) y años (z)
+
+
+* https://www.cepchile.cl/cep/encuestas-cep/encuestas-2000-2009/estudio-nacional-de-opinion-publica-marzo-abril-2000-incluye-tema
+
+
+# Setup
+```{r include=FALSE}
+knitr::opts_chunk$set(warning = FALSE,message = FALSE, cache = TRUE)
+knitr::opts_knit$set(root.dir = "../")
+options(scipen=999)
+rm(list=ls())
+options(knitr.kable.NA = '')
+options(OutDec= ",")
+```
+
+**Libraries**
+```{r}
+pacman::p_load(tidyverse, sjlabelled,sjPlot,sjmisc,knitr,kableExtra,questionr,RColorBrewer,cowplot,ggthemes,ggmosaic,ggrepel) 
+```
+
+**Load data**
+
+```{r}
+load(file = "input/data/proc/issp.Rdata")
+```
+
+# Tables
+
+```{r}
+
+issp %>% 
+  filter(year==1999) %>% 
+  sjmisc::frq(tax,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>% 
+  select(variable,item=label,num,val, raw.prc99=raw.prc) ->tax99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(tax,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->tax09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(tax,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->tax19
+
+left_join(tax99,tax09) %>% 
+  left_join(tax19) %>% 
+  mutate(variable="Preferencias por impuestos a los más ricos") %>% 
+  mutate(item="¿Cree usted que las personas con altos ingresos deberían pagar en impuestos una proporción mayor, igual o menor que aquellas con bajos ingresos") -> tab.tax
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(taxperc,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->taxperc09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(taxperc,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->taxperc19
+
+left_join(taxperc09,taxperc19) %>% 
+  mutate(variable="Percepción de pago de impuestos a los más ricos") %>% 
+  mutate(item="En general, ¿cómo describiría usted los impuestos en el Chile actual para aquellos con altos ingresos? ¿Diría que esos son ...?") -> tab.taxperc
+```
+
+```{r}
+issp %>% 
+  filter(year==1999) %>% 
+  sjmisc::frq(red,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc99=raw.prc) ->red99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(red,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->red09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(red,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->red19
+
+left_join(red99,red09) %>% 
+  left_join(red19) %>% 
+  mutate(variable="Redistribución desde el gobierno") %>% 
+  mutate(item="Es responsabilidad del gobierno reducir las diferencias de ingresos entre las personas con altos ingresos y aquellas con bajos ingresos") -> tab.red
+```
+
+```{r}
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(educself,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->educself09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(educself,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->educself19
+
+
+left_join(educself09,educself19) %>% 
+  mutate(variable="Percepción de Meritocracia") %>% 
+  mutate(item="Importancia: Que Ud. tenga buena educación") -> tab.educself
+```
+
+```{r}
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(ambition,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->ambition09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(ambition,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->ambition19
+
+left_join(ambition09,ambition19) %>% 
+  mutate(variable="Percepción de Meritocracia") %>% 
+  mutate(item="Importancia: Tener ambición") -> tab.ambition
+```
+
+```{r}
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(hwork,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->hwork09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(hwork,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->hwork19
+
+left_join(hwork09,hwork19) %>% 
+  mutate(variable="Percepción de Meritocracia") %>% 
+  mutate(item="Para surgir en la vida, ¿cuán importante cree Ud. que es...El trabajo duro") -> tab.hwork
+```
+
+
+```{r}
+issp %>% 
+  filter(year==1999) %>% 
+  sjmisc::frq(educ,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc99=raw.prc) ->educ99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(educ,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->educ09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(educ,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->educ19
+
+left_join(educ99,educ09) %>% 
+  left_join(educ19) %>% 
+  mutate(variable="Nivel Educacional") %>% 
+  mutate(item="¿Cuál es su nivel educacional?") -> tab.educ
+```
+
+```{r}
+format.money  <- function(x, ...) {
+  paste0("$", formatC(as.numeric(x), format="f", digits=0, big.mark="."))
+}
+
+issp %>% 
+  filter(year==1999) %>%
+  sjmisc::descr(pchhinc_a) %>%
+  data.frame() %>% 
+  mutate(num=NA) %>%
+  select(variable=var,item=label,num,val=sd, raw.prc99=md) %>% 
+  mutate(val="(Mediana)",raw.prc99=format.money(raw.prc99)) -> income99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::descr(pchhinc_a) %>% 
+  data.frame() %>% 
+  mutate(num=NA) %>%
+  select(variable=var,item=label,num,val=sd, raw.prc09=md) %>% 
+  mutate(val="(Mediana)",raw.prc09=format.money(raw.prc09))->income09
+
+issp %>%  
+  filter(year==2019) %>% 
+  sjmisc::descr(pchhinc_a) %>% 
+  data.frame() %>% 
+  mutate(num=NA) %>%
+  select(variable=var,item=label,num,val=sd, raw.prc19=md) %>% 
+  mutate(val="(Mediana)",raw.prc19=format.money(raw.prc19))->income19
+
+left_join(income99,income09) %>% 
+  left_join(income19) %>% 
+  mutate(variable="Ingreso neto equivalente") %>% 
+  mutate(item="Imputación de rango medio de tramo ingreso dividido por el número de integrantes del hogar (1999 y 2009 ajustado a 2019 según IPC acumulado)") -> tab.income
+```
+
+```{r}
+issp %>% 
+  filter(year==1999) %>% 
+  sjmisc::frq(ess,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc99=raw.prc) ->ess99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(ess,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->ess09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(ess,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->ess19
+
+left_join(ess99,ess09) %>% 
+  left_join(ess19) %>% 
+  mutate(variable="Estatus Social Subjetivo") %>% 
+  mutate(item="En nuestra sociedad hay grupos que tienden a estar en los más alto y grupos que tienden a estar en lo más bajo. Usando la siguiente escala que va de 10, lo más alto, hasta 1, lo más bajo, ¿dónde se ubicaría usted hoy en esta escala") %>% 
+  mutate(val=car::recode(val,"1='Bajo';10='Alto'")) -> tab.ess
+
+```
+
+
+```{r}
+issp %>% 
+  filter(year==1999) %>% 
+  sjmisc::frq(pospol,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc99=raw.prc) ->pospol99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(pospol,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->pospol09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(pospol,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->pospol19
+
+left_join(pospol99,pospol09) %>% 
+  left_join(pospol19) %>% 
+  mutate(variable="Posición política") %>% 
+  mutate(item="Como Ud. sabe, tradicionalmente en nuestro país la gente define las posiciones políticas como más cercanas a la izquierda, al centro o a la derecha.Por favor, indíqueme, ¿con cuál Ud. se identifica o simpatiza más?") -> tab.pospol
+```
+
+```{r}
+issp %>% 
+  filter(year==1999) %>% 
+  sjmisc::frq(justsalud,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>% 
+  select(variable,item=label,num,val, raw.prc99=raw.prc) ->justsalud99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(justsalud,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->justsalud09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(justsalud,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->justsalud19
+
+left_join(justsalud99,justsalud09) %>% 
+  left_join(justsalud19) %>% 
+  mutate(variable="Justicia acceso a salud para los más ricos") %>% 
+  mutate(item="¿Es justo o injusto, correcto o incorrecto, que las personas son ingresos más altos puedan pagar por una mejor atención de salud que las personas con ingresos más bajos?") -> tab.justsalud
+```
+
+```{r}
+issp %>% 
+  filter(year==1999) %>% 
+  sjmisc::frq(justeduca,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>% 
+  select(variable,item=label,num,val, raw.prc99=raw.prc) ->justeduca99
+
+issp %>% 
+  filter(year==2009) %>% 
+  sjmisc::frq(justeduca,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc09=raw.prc) ->justeduca09
+
+issp %>% 
+  filter(year==2019) %>% 
+  sjmisc::frq(justeduca,show.na = F) %>% 
+  data.frame() %>% 
+  tibble::rowid_to_column("num") %>%
+  select(variable,item=label,num,val, raw.prc19=raw.prc) ->justeduca19
+
+left_join(justeduca99,justeduca09) %>% 
+  left_join(justeduca19) %>% 
+  mutate(variable="Justicia acceso a la educación para hijos de los más ricos") %>% 
+  mutate(item="¿Es justo o injusto, correcto o incorrecto, que las personas con ingresos más altos puedan pagar una mejor educación para sus hijos que las personas con ingresos más bajos?
+") -> tab.justeduca
+```
+
+
+```{r}
+tab.des<- bind_rows(tab.tax,
+             tab.taxperc,
+             tab.red,
+             tab.justsalud,
+             tab.justeduca,
+             tab.hwork,
+             tab.pospol,
+             tab.ess,
+             tab.educ) %>% 
+  mutate(raw.prc99=as.character(raw.prc99),
+         raw.prc09=as.character(raw.prc09),
+         raw.prc19=as.character(raw.prc19)) %>% 
+  bind_rows(tab.income) 
+```
+
+```{r}
+options(knitr.kable.NA = '-')
+
+tab.des %>% 
+  kbl(col.names = c("Variable","Ítem","Valores","Etiqueta","1999","2009","2019")) %>%
+  kable_classic_2(full_width = F,html_font = "serif") %>% 
+  column_spec(1,"5cm") %>%
+  column_spec(2,"7cm") %>% 
+  column_spec(4,"6.5cm") %>% 
+  collapse_rows(columns = 1:2, valign = "top") %>%
+  save_kable(file = "output/tables/tab_desc.png") 
+```
+
+# Plots
+
+```{r}
+fuente <- "Fuente: ISSP (1999, 2009, 2019). Análisis incluyen ponderadores."
+fuente2 <- "Fuente: ISSP (2009, 2019). Análisis incluyen ponderadores."
+breaks <- c(1:5)
+```
+
+## Tax preferences
+
+```{r}
+tax99<- issp %>% filter(year==1999) %>% select(tax99=tax) %>% tibble::rowid_to_column("ID")
+tax09<- issp %>% filter(year==2009) %>% select(tax09=tax) %>% tibble::rowid_to_column("ID")
+tax19<- issp %>% filter(year==2019) %>% select(tax19=tax) %>% tibble::rowid_to_column("ID")
+tax<- full_join(tax99,tax09) %>% full_join(tax19) %>% select(-ID)
+tax <- tax %>% mutate(tax99=forcats::fct_rev(tax99),
+                      tax09=forcats::fct_rev(tax09),
+                      tax19=forcats::fct_rev(tax19))
+
+set_theme(base = theme_bw(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.2,
+          axis.textsize.y = 1.2, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white", legend.pos = "bottom")
+
+plot01 <- plot_likert(
+  tax,
+  values  =  "sum.inside",
+  show.prc.sign = FALSE,
+  catcount = 4,
+  cat.neutral = 3, 
+  cat.neutral.color = "Gray",
+  geom.colors = "Blues",
+  axis.labels = c("1999", "2009", "2019")) +
+  guides(fill = guide_legend(reverse=T))
+
+plot01
+ggsave(plot01,filename = "output/images/tax_lik.png",device = "png",width = 40,height = 15,dpi = "retina",units = "cm")
+```
+
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textsize.y = 1.2,
+          axis.title.size = 1.5,
+          geom.label.size =1, #size of sum outside
+          legend.just = 1.0, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white",
+          legend.item.size = 0.5,
+          axis.tickscol = "gray")
+
+data <- issp %>% select(tax,year,factor) %>% filter(year %in% c(1999,2009,2019))  %>% na.omit()
+data <- data %>% mutate(tax=car::recode(tax,recodes = "c('Una proporción mucho menor','Una menor proporción')='Una proporción menor/mucho menor';'La misma proporción'='La misma proporción';c('Una proporción mayor','Una proporción mucho mayor')='Una proporción mayor/mucho mayor'",as.factor = T))
+# table(data$tax)
+
+frqdata<- data %>% group_by(year) %>% 
+  sjmisc::frq(tax,show.na = F,weights = factor) %>% 
+  data.frame() %>% 
+  mutate(year=str_split_fixed(string =group,pattern = ", ",n = 2)[,1],
+         hwork=str_split_fixed(string =group,pattern = ", ",n = 2)[,2]) %>% 
+  rename(tax=val)
+
+frqdata$tax <-as.factor(frqdata$tax)
+frqdata$tax <- fct_relevel(frqdata$tax,(c('Una proporción mayor/mucho mayor',"La misma proporción","Una proporción menor/mucho menor")))
+table(frqdata$tax)
+
+tax_lik<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=tax,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  geom_text(data = filter(frqdata,tax %in% levels(frqdata$tax)[1:3]),
+             size = 5,
+             mapping =aes(x=hwork, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  scale_y_continuous(name = NULL) +
+  scale_x_discrete(name = "Preferencias por impuestos a los más ricos")+
+  facet_grid(~year)+
+  labs(caption = fuente)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"))
+
+tax_lik
+
+ggsave(tax_lik,filename = "output/images/tax_lik02.png",device = "png",width = 25,height = 20,dpi = 300,units = "cm")
+```
+
+## Tax perception
+
+```{r}
+tax09 <- issp %>% filter(year==2009) %>% select(taxperc09=taxperc) %>% tibble::rowid_to_column("ID")
+tax19 <- issp %>% filter(year==2019) %>% select(taxperc19=taxperc) %>% tibble::rowid_to_column("ID")
+taxperc <- full_join(tax09,tax19) %>%  select(-ID)
+taxperc <- taxperc %>% mutate(taxperc09=forcats::fct_rev(taxperc09),
+                              taxperc19=forcats::fct_rev(taxperc19))
+table(taxperc$taxperc09)
+
+set_theme(base = theme_bw(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.2,
+          axis.textsize.y = 1.2, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white", legend.pos = "bottom",axis.tickscol = "white")
+
+plot02<- plot_likert(
+  taxperc,
+  values  =  "sum.inside",
+  show.prc.sign = FALSE,
+  catcount = 4,
+  cat.neutral = 3,
+  cat.neutral.color = "Gray",
+  geom.colors = "Blues",
+  axis.labels = c("2009", "2019")) +
+  guides(fill = guide_legend(reverse=T))
+
+plot02
+ggsave(plot02,filename = "output/images/taxperc_lik.png",device = "png",width = 40,height = 15,dpi = "retina",units = "cm")
+```
+
+
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textsize.y = 1.2,
+          axis.title.size = 1.5,
+          geom.label.size =1, #size of sum outside
+          legend.just = 1.0, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white",
+          legend.item.size = 0.5,
+          axis.tickscol = "gray")
+
+data <- issp %>% select(taxperc,year,factor) %>% filter(year %in% c(2009,2019))  %>% na.omit()
+data <- data %>% mutate(taxperc=car::recode(taxperc,recodes = "c('Muy bajos','Bajos')='Bajos/Muy Bajos';'Casi lo que corresponde'='Casi lo que corresponde';c('Altos','Muy altos')='Muy altos/Altos'",as.factor = T))
+# table(data$tax)
+
+frqdata<- data %>% group_by(year) %>%
+  sjmisc::frq(taxperc,show.na = F,weights = factor) %>%
+  data.frame() %>%
+  mutate(year=group,
+         hwork=str_split_fixed(string =group,pattern = ", ",n = 2)[,2]) %>%
+  rename(taxperc=val)
+
+frqdata$taxperc <- as.factor(frqdata$taxperc)
+frqdata$taxperc <- fct_relevel(frqdata$taxperc,c('Muy altos/Altos',"Casi lo que corresponde","Bajos/Muy Bajos"))
+table(frqdata$tax)
+
+taxperc_lik<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=taxperc,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  geom_text(data = filter(frqdata,taxperc %in% levels(frqdata$taxperc)[1:3]),
+             size = 5,
+             mapping =aes(x=hwork, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  scale_y_continuous(name = NULL) +
+  scale_x_discrete(name = "Percepción de pago de impuestos a los más ricos")+
+  facet_grid(~year)+
+  labs(caption = fuente2)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"))
+
+taxperc_lik
+
+ggsave(taxperc_lik,filename = "output/images/taxperc_lik03.png",device = "png",width = 25,height = 20,dpi = 300,units = "cm")
+```
+
+
+
+## Tax preference by status
+
+### Educación
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textsize.y = 1.2, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white", 
+          legend.pos = "bottom",
+          axis.tickscol = "gray")
+
+pref_educ <- issp %>%
+  select(year, educ, tax,factor) %>%
+  filter(year %in% c(1999, 2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, educ) %>%
+  summarise(tax = wtd.mean(as.numeric(tax), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = educ,
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$tax),
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks =c(1:5))) +
+  scale_x_discrete(name = NULL) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente)+
+  scale_color_grey() 
+pref_educ
+ggsave(pref_educ,filename = "output/images/pref_by-educ.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
+```
+
+
+### Ingresos
+```{r}
+pref_income <- issp %>%
+  select(year, pchhinc_a, tax,factor) %>%
+  filter(year %in% c(1999, 2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, tax) %>%
+  summarise(income = wtd.mean(as.numeric(pchhinc_a), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = income,
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  # geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 4.5) +
+  scale_y_continuous(
+    name = NULL,
+    trans = "reverse",
+    labels = levels(issp$tax)[1:5],
+    limits = c(5,1),
+    breaks = c(5:1),
+    sec.axis = sec_axis(~.)
+  ) +
+  scale_x_continuous(name = NULL,labels = scales::dollar_format(big.mark = "."),
+                     expand = expand_scale(mult = c(.2, .2))) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  labs(caption = fuente)+
+  scale_color_grey() + 
+  background_grid(
+    major = c("y"),
+    size.major = 1,
+    color.major = "black") +
+  theme(legend.position = "bottom",
+        panel.grid.major.y =element_line(linetype = 3),axis.text.y.left = element_text(hjust = 1))
+
+pref_income
+ggsave(pref_income,filename = "output/images/pref_by-income.png",device = "png",width = 30,height = 20,dpi = "retina",units = "cm")  
+```
+
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.2,
+          axis.textsize.y = 1.0, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white",
+          axis.tickscol = "gray")
+issp <- issp %>% mutate(decil=factor(ntile(pchhinc_a,n = 10)))
+issp <- issp %>% group_by(decil) %>% mutate(medinc=median(pchhinc_a,na.rm = T))
+
+pref_decile <- issp %>%
+  select(year, decil, tax,factor) %>%
+  filter(year %in% c(1999, 2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, decil) %>%
+  summarise(tax = wtd.mean(as.numeric(tax), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = decil,
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year))) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$tax)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = c(1:5))) +
+  scale_x_discrete(name = NULL,labels=paste0("D",seq(1,10))) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1) ) +
+  labs(caption = fuente)+
+  scale_color_grey() 
+  
+pref_decile
+ggsave(pref_decile,filename = "output/images/pref_decile.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
+```
+
+### Estatus subjetivo
+
+
+```{r}
+issp$ess.rec <-issp$ess 
+issp$ess.rec[issp$ess.rec==9] <- 10
+```
+
+
+```{r}
+pref_ess<- issp %>%
+  select(year, ess.rec, tax,factor) %>%
+  filter(year %in% c(1999, 2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, ess.rec) %>%
+  summarise(tax = wtd.mean(as.numeric(tax),na.rm=TRUE,weights = factor)) %>%
+  ggplot(aes(
+    x = as.factor(ess.rec),
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year))) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)),size=3) +
+  scale_y_continuous(name = NULL,
+                     # trans = "reverse",
+                    labels = levels(issp$tax)[1:5],
+                    limits = c(1,5),
+                    breaks = c(1:5),
+                    sec.axis = sec_axis(~.)) +
+  scale_x_discrete(name = "Estatus Subjetivo",labels=c("Bajo",2:8,"Alto")) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente) +
+  scale_color_grey() 
+pref_ess
+ggsave(pref_ess,filename = "output/images/pref_ess.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
+```
+
+## Posición política 
+
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textsize.y = 1.3, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.0,
+          axis.tickscol = "gray")
+
+pref_pospol <- issp %>%
+  select(year, pospol, tax,factor) %>%
+  filter(year %in% c(1999, 2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, pospol) %>%
+  summarise(tax = wtd.mean(as.numeric(tax), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = pospol,
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year),
+    label=tax,
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$tax)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = c(1:5))) +
+  scale_x_discrete(name = NULL) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente)+
+  scale_color_grey() 
+  
+pref_pospol
+ggsave(pref_pospol,filename = "output/images/pref_by-pospol.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
+```
+
+
+* Decil por variable dependiente en plot de ingreso.   
+* Recuperar Izquierda-Derecha [revisar en CEP83].
+  - 1999: 
+  - 2009: MBP20
+* Importancia del esfuerzo (hwork).
+* En tabla descriptivos usar mediana.
+* Agregar columna valores y etiqueta.
+* Hard work -> preferencia y percepción impuestos 
+* Agregar preguntas de justicia en salud y educación.
+
+* Descripción de las variables de impuesto
+* Estatus objetivo
+* Estatus subjetivo
+* Meritocracia (Hard Work) e impuestos
+
+
+# Preferencia by percepción
+* mosaicplot de 3 x 3
+
+```{r}
+library(grid)
+library(gridExtra)
+
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textsize.y = 0.7, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.0, axis.tickscol = "gray")
+
+
+data1 <- issp %>% select(tax,taxperc,year,factor) %>% filter(year %in% c(1999,2009,2019))  %>% na.omit()
+data1 <- data1 %>% mutate(tax=car::recode(tax,recodes = "c('Una proporción mucho menor','Una menor proporción')='Una proporción menor/mucho menor';'La misma proporción'='La misma proporción';c('Una proporción mayor','Una proporción mucho mayor')='Una proporción mayor/mucho mayor'",as.factor = T))
+data1 <- data1 %>% mutate(taxperc=car::recode(taxperc,recodes = "c('Muy bajos','Bajos')='Bajos/Muy Bajos';'Casi lo que corresponde'='Casi lo que corresponde';c('Altos','Muy altos')='Muy altos/Altos'",as.factor = T))
+
+data1 %>% 
+  select(tax,taxperc,year,factor) %>% 
+  filter(year==2009) %>% 
+  na.omit() %>%
+  ggplot() +
+  geom_mosaic(aes(x=product(tax, taxperc), fill=taxperc,weight=factor)) +
+  geom_label(data = layer_data(last_plot(), 1),
+             aes(x = (xmin + xmax)/ 2,
+                 y = (ymin + ymax)/ 2,
+                 label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
+  facet_grid(~year) +
+  scale_y_continuous(breaks = c(0.05,0.5,0.97),labels = str_wrap(levels(data1$tax)[c(2,1,3)],width = 15))+
+  # labs(caption = fuente2)+
+  guides(fill = guide_legend(title = NULL)) +
+  theme(axis.title.y = element_text(angle = 90), 
+        axis.title.y.left = element_text(size = 18),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"),
+        # legend.position="none",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())+
+  labs(x=NULL,y="Preferencias por impuestos a los más ricos \n")+
+  scale_fill_grey()->mosaic1
+
+
+data1 %>% 
+  select(tax,taxperc,year,factor) %>% 
+  filter(year==2009) %>% 
+  na.omit() %>%
+  ggplot() +
+  geom_mosaic(aes(x=product(tax, taxperc), fill=taxperc,weight=factor)) +
+  geom_label(data = layer_data(last_plot(), 1),
+             aes(x = (xmin + xmax)/ 2,
+                 y = (ymin + ymax)/ 2,
+                 label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
+  facet_grid(~year) +
+  scale_y_continuous(breaks = c(0.05,0.5,0.97),labels = str_wrap(levels(data1$tax)[c(2,1,3)],width = 15))+
+  # labs(caption = fuente2)+
+  guides(fill = guide_legend(title = NULL)) +
+  theme(axis.title.y = element_text(angle = 90), 
+        axis.title.y.left = element_text(size = 18),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"),
+        legend.position="none",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())+
+  labs(x=NULL,y="Preferencias por impuestos a los más ricos \n")+
+  scale_fill_grey() ->mosaic09
+
+data1 %>% 
+  select(tax,taxperc,year,factor) %>% 
+  filter(year==2019) %>% 
+  na.omit() %>%
+  ggplot() +
+  geom_mosaic(aes(x=product(tax, taxperc), fill=taxperc,weight=factor)) +
+  geom_label(data = layer_data(last_plot(), 1),
+             aes(x = (xmin + xmax)/ 2,
+                 y = (ymin + ymax)/ 2,
+                 label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
+  facet_grid(~year) +
+  # scale_y_continuous(breaks = c(0,0.5,1),labels = str_wrap(levels(data1$tax),width = 15))+
+  # scale_y_continuous(breaks = c(0,0.5,1))+
+    labs(y = "\n \n \n \n \n \n \n \n \n \n \n ")+
+  guides(fill = guide_legend(title = NULL)) +
+  theme(axis.title.y = element_text(angle = 90),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"),
+        legend.position="none",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())+
+  labs(x=NULL,y=NULL)+
+  scale_fill_grey() -> mosaic19
+
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+mylegend<-g_legend(mosaic1)
+
+
+grid.arrange(arrangeGrob(mosaic09,
+                         mosaic19,
+                         nrow=1,bottom = grid.text("Percepción de pago de impuestos a los más ricos", gp=gpar(fontfamily = "serif", cex=1.5),just = "center")),
+             mylegend, 
+             nrow=2,
+             heights=c(10, 1),
+             bottom = grid.text(fuente2, gp=gpar(fontfamily = "serif", cex=1),just = "left",hjust = -0.9)) ->mosaic
+
+
+ggsave(mosaic,filename = "output/images/pref_by-perc_mosaic.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+data1 %>% 
+  select(tax,taxperc,year,factor) %>% 
+  na.omit() %>%
+  ggplot() +
+  geom_mosaic(aes(x=product(tax, taxperc), fill=taxperc,weight=factor)) +
+  geom_label(data = layer_data(last_plot(), 1),
+             aes(x = (xmin + xmax)/ 2,
+                 y = (ymin + ymax)/ 2,
+                 label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
+  facet_grid(~year) +
+  scale_y_continuous(breaks = c(0.1,0.5,0.9),labels = str_wrap(levels(data1$tax),width = 15))+
+  # labs(caption = fuente2)+
+  guides(fill = guide_legend(title = NULL)) +
+  theme(axis.title.y = element_text(angle = 90), 
+        axis.title.y.left = element_text(size = 18),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"),
+        legend.position="bottom",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())+
+  labs(x=NULL,y="Preferencias por impuestos a los más ricos \n")+
+  scale_fill_grey()
+
+```
+
+# Meritocracia e impuestos
+
+## Preferencia
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textsize.y = 1.3, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.0,
+          axis.tickscol = "gray")
+
+
+pref_hwork <- issp %>%
+  select(year, hwork, tax,factor) %>%
+  filter(year %in% c(2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, hwork) %>%
+  summarise(tax = wtd.mean(as.numeric(tax), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = hwork,
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$tax)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),sec.axis = sec_axis(~.,breaks = 1:5)) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$hwork),width = 10)) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente)+
+  scale_color_grey() 
+pref_hwork
+ggsave(pref_hwork,filename = "output/images/pref_by-hwork.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
+```
+
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textsize.y = 1.2,
+          axis.title.size = 1.5,
+          geom.label.size =1, #size of sum outside
+          legend.just = 1.0, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white",
+          legend.item.size = 0.5,
+          axis.tickscol = "gray")
+
+data <- issp %>% select(tax,hwork,year,factor) %>% filter(year %in% c(2009,2019))  %>% na.omit()
+data <- data %>% mutate(tax=car::recode(tax,recodes = "c('Una proporción mucho menor','Una menor proporción')='Una proporción menor/mucho menor';'La misma proporción'='La misma proporción';c('Una proporción mayor','Una proporción mucho mayor')='Una proporción mayor/mucho mayor'",as.factor = T))
+# table(data$tax)
+
+frqdata<- data %>% group_by(year,hwork) %>% 
+  sjmisc::frq(tax,show.na = F,weights = factor) %>% 
+  data.frame() %>% 
+  mutate(year=str_split_fixed(string =group,pattern = ", ",n = 2)[,1],
+         hwork=str_split_fixed(string =group,pattern = ", ",n = 2)[,2]) %>% 
+  rename(tax=val)
+frqdata$hwork <-as.factor(frqdata$hwork)
+frqdata$hwork <- fct_relevel(frqdata$hwork,levels(issp$hwork))
+frqdata$tax <-as.factor(frqdata$tax)
+frqdata$tax <- fct_relevel(frqdata$tax,(c('Una proporción mayor/mucho mayor',"La misma proporción","Una proporción menor/mucho menor")))
+table(frqdata$tax)
+
+pref_hwork2<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=tax,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  geom_text(data = filter(frqdata,tax %in% levels(frqdata$tax)[1:3]),
+             size = 4,
+             mapping =aes(x=hwork, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  scale_y_continuous(name = "Preferencias por impuestos a los más ricos \n") +
+  scale_x_discrete(name = "\n Percepción de Meritocracia: Importancia del trabajo duro")+
+  facet_grid(~year)+
+  labs(caption = fuente2)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"))
+
+pref_hwork2  
+
+ggsave(pref_hwork2,filename = "output/images/perc_by-hwork2b.png",device = "png",width = 40,height = 20,dpi = 300,units = "cm")
+```
+
+
+## Percepción
+
+```{r}
+perc_hwork <- issp %>%
+  select(year, hwork, taxperc,factor) %>%
+  filter(year %in% c(2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, hwork) %>%
+  summarise(taxperc = wtd.mean(as.numeric(taxperc), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = hwork,
+    y = as.numeric(taxperc),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$taxperc)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = 1:5)) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$hwork),width = 10)) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente2)+
+  scale_color_grey() 
+perc_hwork
+ggsave(perc_hwork,filename = "output/images/perc_by-hwork.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
+```
+
+# Preferencias redistributivas
+
+```{r}
+data <- issp %>% select(red,year,factor) %>% filter(year %in% c(1999,2009,2019))  %>% na.omit()
+data <- data %>% mutate(red=car::recode(red,recodes = "c('Muy en desacuerdo','En desacuerdo')='En Muy en desacuerdo/desacuerdo';'Ni de acuerdo ni desacuerdo'='Ni de acuerdo ni desacuerdo';c('De acuerdo','Muy de acuerdo')='De acuerdo/muy de acuerdo'",as.factor = T))
+table(data$red)
+
+frqdata<- data %>% group_by(year) %>% 
+  sjmisc::frq(red,show.na = F,weights = factor) %>% 
+  data.frame() %>% 
+  mutate(year=str_split_fixed(string =group,pattern = ", ",n = 2)[,1],
+         hwork=str_split_fixed(string =group,pattern = ", ",n = 2)[,2]) %>% 
+  rename(red=val)
+
+frqdata$red <-as.factor(frqdata$red)
+# frqdata$red <- fct_rev(frqdata$red)
+table(frqdata$red)
+
+red_lik<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=red,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  geom_text(data = filter(frqdata,red %in% levels(frqdata$red)[1:3]),
+             size = 5,
+             mapping =aes(x=hwork, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  scale_y_continuous(name = NULL) +
+  scale_x_discrete(name = "Preferencias redistributivas")+
+  facet_grid(~year)+
+  labs(caption = fuente)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"))
+
+red_lik
+
+ggsave(red_lik,filename = "output/images/red_lik.png",device = "png",width = 25,height = 20,dpi = 300,units = "cm")
+```
+
+## redistributivas by decil
+
+```{r}
+red_decil <- issp %>%
+  select(year, decil, red,factor) %>%
+  filter(year %in% c(1999,2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, decil) %>%
+  summarise(red = wtd.mean(as.numeric(red), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = decil,
+    y = as.numeric(red),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$red)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = 1:5)) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$decil),width = 10)) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente2)+
+  scale_color_grey() 
+red_decil
+ggsave(red_decil,filename = "output/images/red_by-decil.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
+```
+
+## red ~~ tax by educ
+
+```{r}
+data.frame(lapply(issp[,c("year","educ","tax","red")], function(x) as.numeric(x))) %>% 
+  na.omit()%>% 
+  group_by(educ,year) %>%
+  do(data.frame(Cor=t(cor(.[,c("red")], .[,"tax"],use = "complete.obs")))) ->cor.red_tax
+
+cor.red_tax %>% 
+ggplot(aes(
+    x = factor(educ),
+    y = red,
+    color = factor(year),
+    group = factor(year),
+    label =round(red,2)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape=factor(year)),size = 3) +
+  scale_y_continuous(name = "",limits = c(-1,1)) +
+  scale_x_discrete(labels=str_wrap(levels(issp$educ),width = 5))+
+  labs(x=NULL,
+       color = guide_legend(title = ""),
+       shape = guide_legend(title = "")) +
+  scale_color_grey()+
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),
+        axis.text.y.left = element_text(hjust = 1),
+        axis.title.y = element_text(angle = 90)) ->cor_red_tax
+last_plot()
+ggsave(cor_red_tax,filename = "output/images/cor_red_tax-by_educ.png",device = "png",width = 40,height = 20,dpi = 300,units = "cm")
+```
+
+# Justicia Salud
+
+```{r}
+data <- issp %>% select(justsalud,year,factor) %>% filter(year %in% c(1999,2009,2019))  %>% na.omit()
+data <- data %>% mutate(justsalud=car::recode(justsalud,recodes = "c('Muy injusto, definitivamente incorrecto','Algo injusto o incorrecto')='Muy injusto/algo injusto';'Ni justo ni injusto'='Ni justo ni injusto';c('Algo justo o correcto','Muy justo, definitivamente correcto')='Algo justo/Muy justo'",as.factor = T))
+table(data$justsalud)
+
+frqdata<- data %>% group_by(year) %>% 
+  sjmisc::frq(justsalud,show.na = F,weights = factor) %>% 
+  data.frame() %>% 
+  mutate(year=str_split_fixed(string =group,pattern = ", ",n = 2)[,1],
+         hwork=str_split_fixed(string =group,pattern = ", ",n = 2)[,2]) %>% 
+  rename(justsalud=val)
+
+frqdata$justsalud <-as.factor(frqdata$justsalud)
+# frqdata$red <- fct_rev(frqdata$red)
+table(frqdata$justsalud)
+
+justsalud_lik<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=justsalud,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  geom_text(data = filter(frqdata,justsalud %in% levels(frqdata$justsalud)[1:3]),
+             size = 5,
+             mapping =aes(x=hwork, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  scale_y_continuous(name = NULL) +
+  scale_x_discrete(name = "Justicia en acceso a salud")+
+  facet_grid(~year)+
+  labs(caption = fuente)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"))
+
+justsalud_lik
+
+ggsave(justsalud_lik,filename = "output/images/justsalud.png",device = "png",width = 25,height = 20,dpi = 300,units = "cm")
+```
+
+# Justicia educación
+
+```{r}
+data <- issp %>% select(justeduca,year,factor) %>% filter(year %in% c(1999,2009,2019))  %>% na.omit()
+data <- data %>% mutate(justeduca=car::recode(justeduca,recodes = "c('Muy injusto, definitivamente incorrecto','Algo injusto o incorrecto')='Muy injusto/algo injusto';'Ni justo ni injusto'='Ni justo ni injusto';c('Algo justo o correcto','Muy justo, definitivamente correcto')='Algo justo/Muy justo'",as.factor = T))
+table(data$justeduca)
+
+frqdata<- data %>% group_by(year) %>% 
+  sjmisc::frq(justeduca,show.na = F,weights = factor) %>% 
+  data.frame() %>% 
+  mutate(year=str_split_fixed(string =group,pattern = ", ",n = 2)[,1],
+         hwork=str_split_fixed(string =group,pattern = ", ",n = 2)[,2]) %>% 
+  rename(justeduca=val)
+
+frqdata$justeduca <-as.factor(frqdata$justeduca)
+# frqdata$red <- fct_rev(frqdata$red)
+table(frqdata$justeduca)
+
+justeduca_lik<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=justeduca,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  geom_text(data = filter(frqdata,justeduca %in% levels(frqdata$justeduca)[1:3]),
+             size = 5,
+             mapping =aes(x=hwork, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  scale_y_continuous(name = NULL) +
+  scale_x_discrete(name = "Justicia en acceso a educación")+
+  facet_grid(~year)+
+  labs(caption = fuente)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid"))
+
+justeduca_lik
+
+ggsave(justeduca_lik,filename = "output/images/justeduca.png",device = "png",width = 25,height = 20,dpi = 300,units = "cm")
+```
+
+## Just educación by educación
+
+```{r}
+justed_educ <- issp %>%
+  select(year, educ, justeduca,factor) %>%
+  filter(year %in% c(1999,2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, educ) %>%
+  summarise(justeduca = wtd.mean(as.numeric(justeduca), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = educ,
+    y = as.numeric(justeduca),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$justeduca)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = 1:5)) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$educ),width = 10)) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente2)+
+  scale_color_grey() 
+justed_educ
+ggsave(justed_educ,filename = "output/images/justed_by-educ.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
+```
+
+## Just salud by educación
+
+```{r}
+justsalud_educ <- issp %>%
+  select(year, educ, justsalud,factor) %>%
+  filter(year %in% c(1999,2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, educ) %>%
+  summarise(justsalud = wtd.mean(as.numeric(justsalud), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = educ,
+    y = as.numeric(justsalud),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$justsalud)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = 1:5)) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$educ),width = 10)) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente2)+
+  scale_color_grey() 
+justsalud_educ
+ggsave(justsalud_educ,filename = "output/images/justsalud_by-educ.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
+```
+
+```{r}
+issp %>%
+  select(year, tax, justeduca,factor) %>%
+  filter(year %in% c(1999,2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, justeduca) %>%
+  summarise(tax = wtd.mean(as.numeric(tax), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = justeduca,
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$tax)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = 1:5)) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$justeduca),width = 10)) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente2)+
+  scale_color_grey() 
+```
+
+```{r}
+issp %>%
+  select(year, tax, justsalud,factor) %>%
+  filter(year %in% c(1999,2009, 2019)) %>%
+  na.omit() %>%
+  group_by(year, justsalud) %>%
+  summarise(tax = wtd.mean(as.numeric(tax), na.rm = T,weights = factor)) %>%
+  ggplot(aes(
+    x = justsalud,
+    y = as.numeric(tax),
+    color = as.factor(year),
+    group = as.factor(year)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape = as.factor(year)), size = 3) +
+  scale_y_continuous(
+    name = NULL,
+    # trans = "reverse",
+    labels = levels(issp$tax)[1:5],
+    limits = c(1,5),
+    breaks = c(1:5),
+    sec.axis = sec_axis(~.,breaks = 1:5)) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$justsalud),width = 10)) +
+  guides(shape = guide_legend(title = NULL),
+         color = guide_legend(title = NULL)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+  labs(caption = fuente2)+
+  scale_color_grey() 
+```
+
+# Impuestos
+
+https://i.ytimg.com/vi/bQs0p3VxmZQ/maxresdefault.jpg
+
+# Correlación
+
+## Estatus y preferencia
+
+```{r}
+issp %>% filter(year==1999) %>% 
+  select(tax,educ,decil,justsalud,justeduca,red)  -> tab.cor1999
+
+tab.cor1999<- data.frame(lapply(tab.cor1999, function(x) as.numeric(x)))
+
+sjt.corr(tab.cor1999,triangle = "lower")
+cor99 <- cor(tab.cor1999,use = "complete.obs")
+cor99<-data.frame(cor99) 
+
+issp %>% filter(year==2009) %>% 
+  select(tax,educ,decil,justsalud,justeduca,red) -> tab.cor2009
+tab.cor2009<- data.frame(lapply(tab.cor2009, function(x) as.numeric(x)))
+sjt.corr(tab.cor2009,triangle = "lower")
+cor09<- cor(tab.cor2009,use = "complete.obs")
+cor09<-data.frame(cor09) 
+
+issp %>% filter(year==2019) %>% 
+  select(tax,educ,decil,justsalud,justeduca,red) -> tab.cor2019
+tab.cor2019<- data.frame(lapply(tab.cor2019, function(x) as.numeric(x)))
+sjt.corr(tab.cor2019,triangle = "lower")
+cor19<- cor(tab.cor2019,use = "complete.obs")
+cor19<-data.frame(cor19) 
+
+datcor<- data.frame(c(cor99$tax[2:6],cor09$tax[2:6],cor19$tax[2:6]), 
+                    c(rep(x = 1999,5),rep(x = 2009,5),rep(x = 2019,5)),
+                    c("Educacion","Decil","Just. Salud","Just. Educación","Redistribución"))
+colnames(datcor) <- c("cor","year","variable")
+datcor$cor <- as.numeric(datcor$cor)
+str(datcor)
+```
+
+```{r}
+datcor %>% 
+  filter(variable %in% c("Decil","Just. Salud","Just. Educación","Redistribución")) %>% 
+ggplot(aes(
+    x = factor(year),
+    y = cor,
+    color = variable,
+    group = variable,
+    label =round(cor,2)
+  )) +
+  geom_line(size = 1.0) +
+  geom_point(aes(shape=variable),size = 3) +
+  scale_y_continuous(name = "",limits = c(-0.25,0.25)) +
+  labs(x="Año",
+       color = guide_legend(title = ""),
+       shape = guide_legend(title = ""))+
+  # geom_label_repel()  +
+  scale_color_grey()+
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),
+        axis.text.y.left = element_text(hjust = 1),
+        axis.title.y = element_text(angle = 90)) -> cor_vars 
+last_plot()
+
+ggsave(cor_vars,filename = "output/images/cor_vars.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
+```
+
+
+
+* Justicia Educación/Salud x Preferencia impuesto a los más ricos
+* Submuestra de educación alta en el stackedbarplot 
