@@ -28,7 +28,7 @@ options(OutDec= ",")
 
 **Libraries**
 ```{r}
-pacman::p_load(tidyverse, sjlabelled,sjPlot,sjmisc,knitr,kableExtra,questionr,RColorBrewer,cowplot,ggthemes,ggmosaic,ggrepel) 
+pacman::p_load(tidyverse, sjlabelled,sjPlot,sjmisc,knitr,kableExtra,questionr,RColorBrewer,cowplot,ggthemes,ggmosaic,ggrepel, car) 
 ```
 
 **Load data**
@@ -36,6 +36,22 @@ pacman::p_load(tidyverse, sjlabelled,sjPlot,sjmisc,knitr,kableExtra,questionr,RC
 ```{r}
 load(file = "input/data/proc/issp.Rdata")
 ```
+
+
+```{r}
+# invertir justicia educacion salud.
+
+issp$js <- as.numeric(issp$justsalud)
+issp$js <- factor(recode(issp$js, "1=5; 2=4; 3=3; 4=2; 5=1"), labels = c("Muy injusto, definitivamente incorrecto", "Algo injusto o incorrecto", "Ni justo ni injusto", "Algo justo o correcto","Muy justo, definitivamente correcto"))
+
+issp$je <- as.numeric(issp$justeduca)
+issp$je <- factor(recode(issp$je, "1=5; 2=4; 3=3; 4=2; 5=1"), labels = c("Muy injusto, definitivamente incorrecto", "Algo injusto o incorrecto", "Ni justo ni injusto", "Algo justo o correcto","Muy justo, definitivamente correcto"))
+
+
+issp$justsalud <- issp$js
+issp$justeduca <- issp$je
+```
+
 
 # Tables
 
@@ -1363,6 +1379,9 @@ ggsave(justsalud_educ,filename = "output/images/justsalud_by-educ.png",device = 
 ```
 
 ```{r}
+
+
+
 issp %>%
   select(year, tax, justeduca,factor) %>%
   filter(year %in% c(1999,2009, 2019)) %>%
@@ -1463,6 +1482,7 @@ colnames(datcor) <- c("cor","year","variable")
 datcor$cor <- as.numeric(datcor$cor)
 str(datcor)
 ```
+
 
 ```{r}
 datcor %>% 
