@@ -629,7 +629,7 @@ pref_educ <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente)+
-  scale_color_grey() 
+  scale_color_grey(start=0.8, end= 0.2)  
 pref_educ
 ggsave(pref_educ,filename = "output/images/pref_by-educ.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
 ```
@@ -664,7 +664,7 @@ pref_income <- issp %>%
   guides(shape = guide_legend(title = NULL),
          color = guide_legend(title = NULL)) +
   labs(caption = fuente)+
-  scale_color_grey() + 
+scale_color_grey(start=0.8, end= 0.2) +
   background_grid(
     major = c("y"),
     size.major = 1,
@@ -715,8 +715,7 @@ pref_decile <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1) ) +
   labs(caption = fuente)+
-  scale_color_grey() 
-  
+scale_color_grey(start=0.8, end= 0.2)   
 pref_decile
 ggsave(pref_decile,filename = "output/images/pref_decile.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
 ```
@@ -755,7 +754,7 @@ pref_ess<- issp %>%
          color = guide_legend(title = NULL)) +
   theme(legend.position = "right",axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente) +
-  scale_color_grey() 
+scale_color_grey(start=0.8, end= 0.2) 
 pref_ess
 ggsave(pref_ess,filename = "output/images/pref_ess.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
 ```
@@ -800,8 +799,7 @@ pref_pospol <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente)+
-  scale_color_grey() 
-  
+scale_color_grey(start=0.8, end= 0.2)   
 pref_pospol
 ggsave(pref_pospol,filename = "output/images/pref_by-pospol.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
 ```
@@ -1017,7 +1015,7 @@ pref_hwork <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente)+
-  scale_color_grey() 
+scale_color_grey(start=0.8, end= 0.2) 
 pref_hwork
 ggsave(pref_hwork,filename = "output/images/pref_by-hwork.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
 ```
@@ -1070,7 +1068,6 @@ pref_hwork2<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=tax,label=raw.prc)) +
         legend.justification = "center",
         strip.text.x = element_text(size = 18),
         strip.background = element_rect(color = "black",linetype = "solid"))
-
 pref_hwork2  
 
 ggsave(pref_hwork2,filename = "output/images/perc_by-hwork2b.png",device = "png",width = 40,height = 20,dpi = 300,units = "cm")
@@ -1107,7 +1104,7 @@ perc_hwork <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente2)+
-  scale_color_grey() 
+  scale_color_grey(start= 0.8, end = 0.2) 
 perc_hwork
 ggsave(perc_hwork,filename = "output/images/perc_by-hwork.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
 ```
@@ -1185,7 +1182,7 @@ red_decil <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente2)+
-  scale_color_grey() 
+scale_color_grey(start=0.8, end= 0.2) 
 red_decil
 ggsave(red_decil,filename = "output/images/red_by-decil.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
 ```
@@ -1213,7 +1210,7 @@ ggplot(aes(
   labs(x=NULL,
        color = guide_legend(title = ""),
        shape = guide_legend(title = "")) +
-  scale_color_grey()+
+  scale_color_grey(start=0.8, end= 0.2) +
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),
         axis.text.y.left = element_text(hjust = 1),
@@ -1338,7 +1335,7 @@ justed_educ <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente2)+
-  scale_color_grey() 
+  scale_color_grey(start=0.8, end= 0.2) 
 justed_educ
 ggsave(justed_educ,filename = "output/images/justed_by-educ.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
 ```
@@ -1373,7 +1370,7 @@ justsalud_educ <- issp %>%
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
   labs(caption = fuente2)+
-  scale_color_grey() 
+  scale_color_grey(start=0.8, end= 0.2)  
 justsalud_educ
 ggsave(justsalud_educ,filename = "output/images/justsalud_by-educ.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
 ```
@@ -1501,7 +1498,7 @@ ggplot(aes(
        color = guide_legend(title = ""),
        shape = guide_legend(title = ""))+
   # geom_label_repel()  +
-  scale_color_grey()+
+  scale_color_grey(start=0.8, end= 0.2) +
   theme(legend.position = "right",
         legend.key = element_rect(fill = "White"),
         axis.text.y.left = element_text(hjust = 1),
