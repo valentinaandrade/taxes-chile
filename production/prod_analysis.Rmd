@@ -28,13 +28,15 @@ options(OutDec= ",")
 
 **Libraries**
 ```{r}
-pacman::p_load(tidyverse, sjlabelled,sjPlot,sjmisc,knitr,kableExtra,questionr,RColorBrewer,cowplot,ggthemes,ggmosaic,ggrepel, car) 
+pacman::p_load(tidyverse, sjlabelled,sjPlot,sjmisc,knitr,kableExtra,questionr,RColorBrewer,cowplot,ggthemes,ggmosaic,ggrepel, car,haven) 
 ```
 
 **Load data**
 
 ```{r}
 load(file = "input/data/proc/issp.Rdata")
+issp16 <- read_dta(file = "input/data/original/issp2016gov.dta")
+load(file = "input/data/original/issp2019CL.RData")
 ```
 
 
@@ -404,8 +406,8 @@ tab.des %>%
 # Plots
 
 ```{r}
-fuente <- "Fuente: ISSP (1999, 2009, 2019). Análisis incluyen ponderadores."
-fuente2 <- "Fuente: ISSP (2009, 2019). Análisis incluyen ponderadores."
+fuente <- "\n Fuente: ISSP (1999, 2009, 2019). Análisis incluyen ponderadores."
+fuente2 <- "\n Fuente: ISSP (2009, 2019). Análisis incluyen ponderadores."
 breaks <- c(1:5)
 ```
 
@@ -593,11 +595,11 @@ ggsave(taxperc_lik,filename = "output/images/taxperc_lik03.png",device = "png",w
 ```{r}
 set_theme(base = theme_hc(),
           theme.font = "serif", 
-          axis.textsize.x = 1.0,
+          axis.textsize.x = 1.2,
           axis.textsize.y = 1.2, 
           geom.label.size = 4, #size of sum outside
           legend.just = 0.35, 
-          legend.size = 1.0,
+          legend.size = 1.4,
           legend.backgroundcol = "white", 
           legend.pos = "bottom",
           axis.tickscol = "gray")
@@ -623,11 +625,13 @@ pref_educ <- issp %>%
     limits = c(1,5),
     breaks = c(1:5),
     sec.axis = sec_axis(~.,breaks =c(1:5))) +
-  scale_x_discrete(name = NULL) +
+  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$educ),10)) +
   guides(shape = guide_legend(title = NULL),
          color = guide_legend(title = NULL)) +
   theme(legend.position = "right",
-        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+        legend.key = element_rect(fill = "White"),
+        axis.text.y.left = element_text(hjust = 1),
+        plot.caption = element_text(size = 12,hjust = 1)) +
   labs(caption = fuente)+
   scale_color_grey(start=0.8, end= 0.2)  
 pref_educ
@@ -670,7 +674,9 @@ scale_color_grey(start=0.8, end= 0.2) +
     size.major = 1,
     color.major = "black") +
   theme(legend.position = "bottom",
-        panel.grid.major.y =element_line(linetype = 3),axis.text.y.left = element_text(hjust = 1))
+        panel.grid.major.y =element_line(linetype = 3),
+        axis.text.y.left = element_text(hjust = 1),
+        plot.caption = element_text(size = 12,hjust = 1))
 
 pref_income
 ggsave(pref_income,filename = "output/images/pref_by-income.png",device = "png",width = 30,height = 20,dpi = "retina",units = "cm")  
@@ -679,11 +685,11 @@ ggsave(pref_income,filename = "output/images/pref_by-income.png",device = "png",
 ```{r}
 set_theme(base = theme_hc(),
           theme.font = "serif", 
-          axis.textsize.x = 1.2,
-          axis.textsize.y = 1.0, 
+          axis.textsize.x = 1.3,
+          axis.textsize.y = 1.2, 
           geom.label.size = 4, #size of sum outside
           legend.just = 0.35, 
-          legend.size = 1.0,
+          legend.size = 1.4,
           legend.backgroundcol = "white",
           axis.tickscol = "gray")
 issp <- issp %>% mutate(decil=factor(ntile(pchhinc_a,n = 10)))
@@ -713,7 +719,9 @@ pref_decile <- issp %>%
   guides(shape = guide_legend(title = NULL),
          color = guide_legend(title = NULL)) +
   theme(legend.position = "right",
-        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1) ) +
+        legend.key = element_rect(fill = "White"),
+        axis.text.y.left = element_text(hjust = 1),
+        plot.caption = element_text(size = 12,hjust = 1)) +
   labs(caption = fuente)+
 scale_color_grey(start=0.8, end= 0.2)   
 pref_decile
@@ -721,7 +729,6 @@ ggsave(pref_decile,filename = "output/images/pref_decile.png",device = "png",wid
 ```
 
 ### Estatus subjetivo
-
 
 ```{r}
 issp$ess.rec <-issp$ess 
@@ -749,10 +756,13 @@ pref_ess<- issp %>%
                     limits = c(1,5),
                     breaks = c(1:5),
                     sec.axis = sec_axis(~.)) +
-  scale_x_discrete(name = "Estatus Subjetivo",labels=c("Bajo",2:8,"Alto")) +
+  scale_x_discrete(name = NULL,labels=c("Bajo",2:8,"Alto")) +
   guides(shape = guide_legend(title = NULL),
          color = guide_legend(title = NULL)) +
-  theme(legend.position = "right",axis.text.y.left = element_text(hjust = 1)) +
+  theme(legend.position = "right",
+        legend.key = element_rect(fill = "White"),
+        axis.text.y.left = element_text(hjust = 1),
+        plot.caption = element_text(size = 12,hjust = 1)) +
   labs(caption = fuente) +
 scale_color_grey(start=0.8, end= 0.2) 
 pref_ess
@@ -764,11 +774,11 @@ ggsave(pref_ess,filename = "output/images/pref_ess.png",device = "png",width = 4
 ```{r}
 set_theme(base = theme_hc(),
           theme.font = "serif", 
-          axis.textsize.x = 1.0,
-          axis.textsize.y = 1.3, 
+          axis.textsize.x = 1.3,
+          axis.textsize.y = 1.2, 
           geom.label.size = 4, #size of sum outside
           legend.just = 0.35, 
-          legend.size = 1.0,
+          legend.size = 1.4,
           axis.tickscol = "gray")
 
 pref_pospol <- issp %>%
@@ -797,7 +807,8 @@ pref_pospol <- issp %>%
   guides(shape = guide_legend(title = NULL),
          color = guide_legend(title = NULL)) +
   theme(legend.position = "right",
-        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
+        plot.caption = element_text(size = 14,hjust = 1)) +
   labs(caption = fuente)+
 scale_color_grey(start=0.8, end= 0.2)   
 pref_pospol
@@ -824,6 +835,8 @@ ggsave(pref_pospol,filename = "output/images/pref_by-pospol.png",device = "png",
 # Preferencia by percepción
 * mosaicplot de 3 x 3
 
+## Mosaicplot
+
 ```{r}
 library(grid)
 library(gridExtra)
@@ -831,15 +844,17 @@ library(gridExtra)
 set_theme(base = theme_hc(),
           theme.font = "serif", 
           axis.textsize.x = 1.0,
-          axis.textsize.y = 0.7, 
-          geom.label.size = 4, #size of sum outside
+          axis.textsize.y = 1.3, 
+          geom.label.size = 8, #size of sum outside
           legend.just = 0.35, 
-          legend.size = 1.0, axis.tickscol = "gray")
+          legend.size = 1.4, axis.tickscol = "gray")
 
 
 data1 <- issp %>% select(tax,taxperc,year,factor) %>% filter(year %in% c(1999,2009,2019))  %>% na.omit()
-data1 <- data1 %>% mutate(tax=car::recode(tax,recodes = "c('Una proporción mucho menor','Una menor proporción')='Una proporción menor/mucho menor';'La misma proporción'='La misma proporción';c('Una proporción mayor','Una proporción mucho mayor')='Una proporción mayor/mucho mayor'",as.factor = T))
-data1 <- data1 %>% mutate(taxperc=car::recode(taxperc,recodes = "c('Muy bajos','Bajos')='Bajos/Muy Bajos';'Casi lo que corresponde'='Casi lo que corresponde';c('Altos','Muy altos')='Muy altos/Altos'",as.factor = T))
+data1 <- data1 %>% mutate(tax=car::recode(tax,recodes = "c('Una proporción mucho menor','Una menor proporción')='Una proporción menor/mucho menor';'La misma proporción'='La misma proporción';c('Una proporción mayor','Una proporción mucho mayor')='Una proporción mayor/mucho mayor'",as.factor = T,
+                                          levels = c("Una proporción menor/mucho menor","La misma proporción","Una proporción mayor/mucho mayor")))
+data1 <- data1 %>% mutate(taxperc=car::recode(taxperc,recodes = "c('Muy bajos','Bajos')='Bajos/Muy Bajos';'Casi lo que corresponde'='Casi lo que corresponde';c('Altos','Muy altos')='Muy altos/Altos'",as.factor = T,
+                                              levels =c("Bajos/Muy Bajos","Casi lo que corresponde","Muy altos/Altos") ))
 
 data1 %>% 
   select(tax,taxperc,year,factor) %>% 
@@ -852,14 +867,16 @@ data1 %>%
                  y = (ymin + ymax)/ 2,
                  label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
   facet_grid(~year) +
-  scale_y_continuous(breaks = c(0.05,0.5,0.97),labels = str_wrap(levels(data1$tax)[c(2,1,3)],width = 15))+
+  scale_y_continuous(breaks = c(0.05,0.5,0.97),
+                     labels = str_wrap(levels(data1$tax)[c(2,1,3)],width = 15),
+                     trans = "reverse",)+
   # labs(caption = fuente2)+
   guides(fill = guide_legend(title = NULL)) +
   theme(axis.title.y = element_text(angle = 90), 
         axis.title.y.left = element_text(size = 18),
         legend.direction = "horizontal",
         legend.justification = "center",
-        strip.text.x = element_text(size = 18),
+        strip.text.x = element_text(size = 20),
         strip.background = element_rect(color = "black",linetype = "solid"),
         # legend.position="none",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
@@ -875,21 +892,22 @@ data1 %>%
   na.omit() %>%
   ggplot() +
   geom_mosaic(aes(x=product(tax, taxperc), fill=taxperc,weight=factor)) +
-  geom_label(data = layer_data(last_plot(), 1),
+  geom_text(data = layer_data(last_plot(), 1),size=6,color="white",fontface = "plain",
              aes(x = (xmin + xmax)/ 2,
                  y = (ymin + ymax)/ 2,
                  label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
   facet_grid(~year) +
-  scale_y_continuous(breaks = c(0.05,0.5,0.97),labels = str_wrap(levels(data1$tax)[c(2,1,3)],width = 15))+
+  scale_y_continuous(breaks = c(0.025,0.1,0.97),
+                     labels = str_wrap(levels(data1$tax)[c(1,2,3)],width = 20))+
   # labs(caption = fuente2)+
   guides(fill = guide_legend(title = NULL)) +
   theme(axis.title.y = element_text(angle = 90), 
         axis.title.y.left = element_text(size = 18),
         legend.direction = "horizontal",
         legend.justification = "center",
-        strip.text.x = element_text(size = 18),
+        strip.text.x = element_text(size = 20),
         strip.background = element_rect(color = "black",linetype = "solid"),
-        legend.position="none",
+        legend.position="top",
         legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank())+
@@ -902,24 +920,25 @@ data1 %>%
   na.omit() %>%
   ggplot() +
   geom_mosaic(aes(x=product(tax, taxperc), fill=taxperc,weight=factor)) +
-  geom_label(data = layer_data(last_plot(), 1),
+  geom_text(data = layer_data(last_plot(), 1),size=6,color="white",fontface = "plain",
              aes(x = (xmin + xmax)/ 2,
                  y = (ymin + ymax)/ 2,
                  label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
   facet_grid(~year) +
-  # scale_y_continuous(breaks = c(0,0.5,1),labels = str_wrap(levels(data1$tax),width = 15))+
-  # scale_y_continuous(breaks = c(0,0.5,1))+
-    labs(y = "\n \n \n \n \n \n \n \n \n \n \n ")+
+  scale_y_continuous(breaks = c(0.025,0.18,0.97),labels = str_wrap(levels(data1$tax)[c(1,2,3)],width = 20))+
+  # labs(caption = fuente2)+
   guides(fill = guide_legend(title = NULL)) +
-  theme(axis.title.y = element_text(angle = 90),
+  theme(axis.title.y = element_text(angle = 90), 
+        axis.title.y.left = element_text(size = 18),
         legend.direction = "horizontal",
         legend.justification = "center",
-        strip.text.x = element_text(size = 18),
+        strip.text.x = element_text(size = 20),
         strip.background = element_rect(color = "black",linetype = "solid"),
-        legend.position="none",
+        legend.position="top",
+        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank())+
-  labs(x=NULL,y=NULL)+
+  labs(x=NULL,y="Preferencias por impuestos a los más ricos \n")+
   scale_fill_grey() -> mosaic19
 
 
@@ -943,35 +962,9 @@ grid.arrange(arrangeGrob(mosaic09,
 
 ggsave(mosaic,filename = "output/images/pref_by-perc_mosaic.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")  
 
-```
+ggsave(mosaic09,filename = "output/images/pref_by-perc_mosaic09.png",device = "png",width = 35,height = 21,dpi = "retina",units = "cm")
 
-
-```{r eval=FALSE, include=FALSE}
-data1 %>% 
-  select(tax,taxperc,year,factor) %>% 
-  na.omit() %>%
-  ggplot() +
-  geom_mosaic(aes(x=product(tax, taxperc), fill=taxperc,weight=factor)) +
-  geom_label(data = layer_data(last_plot(), 1),
-             aes(x = (xmin + xmax)/ 2,
-                 y = (ymin + ymax)/ 2,
-                 label = paste0(round((.wt/sum(.wt))*100,1),"%"))) +
-  facet_grid(~year) +
-  scale_y_continuous(breaks = c(0.1,0.5,0.9),labels = str_wrap(levels(data1$tax),width = 15))+
-  # labs(caption = fuente2)+
-  guides(fill = guide_legend(title = NULL)) +
-  theme(axis.title.y = element_text(angle = 90), 
-        axis.title.y.left = element_text(size = 18),
-        legend.direction = "horizontal",
-        legend.justification = "center",
-        strip.text.x = element_text(size = 18),
-        strip.background = element_rect(color = "black",linetype = "solid"),
-        legend.position="bottom",
-        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1),
-        panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank())+
-  labs(x=NULL,y="Preferencias por impuestos a los más ricos \n")+
-  scale_fill_grey()
+ggsave(mosaic19,filename = "output/images/pref_by-perc_mosaic19.png",device = "png",width = 35,height = 21,dpi = "retina",units = "cm")
 
 ```
 
@@ -1155,6 +1148,15 @@ ggsave(red_lik,filename = "output/images/red_lik.png",device = "png",width = 25,
 ## redistributivas by decil
 
 ```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.3,
+          axis.textsize.y = 1.2, 
+          geom.label.size = 4, #size of sum outside
+          legend.just = 0.35, 
+          legend.size = 1.4,
+          legend.backgroundcol = "white",
+          axis.tickscol = "gray")
 red_decil <- issp %>%
   select(year, decil, red,factor) %>%
   filter(year %in% c(1999,2009, 2019)) %>%
@@ -1176,12 +1178,14 @@ red_decil <- issp %>%
     limits = c(1,5),
     breaks = c(1:5),
     sec.axis = sec_axis(~.,breaks = 1:5)) +
-  scale_x_discrete(name = NULL,labels=str_wrap(levels(issp$decil),width = 10)) +
+  scale_x_discrete(name = NULL,labels=paste0("D",seq(1,10))) +
   guides(shape = guide_legend(title = NULL),
          color = guide_legend(title = NULL)) +
   theme(legend.position = "right",
-        legend.key = element_rect(fill = "White"),axis.text.y.left = element_text(hjust = 1)) +
-  labs(caption = fuente2)+
+        legend.key = element_rect(fill = "White"),
+        axis.text.y.left = element_text(hjust = 1),
+        plot.caption = element_text(size = 12,hjust = 1)) +
+  labs(caption = fuente)+
 scale_color_grey(start=0.8, end= 0.2) 
 red_decil
 ggsave(red_decil,filename = "output/images/red_by-decil.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
@@ -1449,7 +1453,7 @@ https://i.ytimg.com/vi/bQs0p3VxmZQ/maxresdefault.jpg
 ## Estatus y preferencia
 
 ```{r}
-issp %>% filter(year==1999) %>% 
+issp %>% filter(year==1999) %>%
   select(tax,educ,decil,justsalud,justeduca,red)  -> tab.cor1999
 
 tab.cor1999<- data.frame(lapply(tab.cor1999, function(x) as.numeric(x)))
@@ -1482,6 +1486,76 @@ str(datcor)
 
 
 ```{r}
+library(corrplot)
+cor99a <-  cor(tab.cor1999 %>% na.omit() %>% select(tax,red,justsalud,justeduca),use = "complete.obs")
+cor09a <-  cor(tab.cor2009 %>% na.omit() %>% select(tax,red,justsalud,justeduca),use = "complete.obs")
+cor19a <-  cor(tab.cor2019 %>% na.omit() %>% select(tax,red,justsalud,justeduca),use = "complete.obs")
+rownames <- c("A. Pref. Impuestos","B. Pref. Redistributivas","C. Just. Salud","D. Just. Educación")
+colnames <- c("(A)","(B)","(C)","(D)")
+rownames(cor99a) <- rownames; colnames(cor99a) <- colnames
+rownames(cor09a) <- rownames; colnames(cor09a) <- colnames
+rownames(cor19a) <- rownames; colnames(cor19a) <- colnames
+
+# PLOT 1999
+png("output/images/cor1999.png",
+    width = 18,height = 13,units="cm",
+    pointsize=12,bg="white",res=300)
+
+corrplot(
+  cor99a,
+  method = "color",
+  type = "upper",
+  tl.col = "black",
+  addCoef.col = "black",
+  diag = TRUE,
+  family = "A", 
+  number.font = 6,
+  tl.cex =0.75,
+  number.cex = 1)
+
+dev.off()
+
+# PLOT 2009
+png("output/images/cor2009.png",
+    width = 18,height = 13,units="cm",
+    pointsize=12,bg="white",res=300)
+
+corrplot(
+  cor09a,
+  method = "color",
+  type = "upper",
+  tl.col = "black",
+  addCoef.col = "black",
+  diag = TRUE,
+  family = "A", 
+  number.font = 6,
+  tl.cex =0.75,
+  number.cex = 1)
+
+dev.off()
+
+# PLOT 2019
+png("output/images/cor2019.png",
+    width = 18,height = 13,units="cm",
+    pointsize=12,bg="white",res=300)
+
+corrplot(
+  cor19a,
+  method = "color",
+  type = "upper",
+  tl.col = "black",
+  addCoef.col = "black",
+  diag = TRUE,
+  family = "A", 
+  number.font = 6,
+  tl.cex =0.75,
+  number.cex = 1)
+dev.off()
+```
+
+
+
+```{r}
 datcor %>% 
   filter(variable %in% c("Decil","Just. Salud","Just. Educación","Redistribución")) %>% 
 ggplot(aes(
@@ -1508,7 +1582,188 @@ last_plot()
 ggsave(cor_vars,filename = "output/images/cor_vars.png",device = "png",width = 40,height = 20,dpi = "retina",units = "cm")
 ```
 
+# Preferencias redistributivas comparadas
+
+
+```{r}
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          title.size = 10,
+          axis.textsize.x = 1.2,
+          axis.textsize.y = 1.2, 
+          geom.label.size = 4, #size of sum outside
+          legend.size = 1.4,
+          legend.backgroundcol = "white", 
+          legend.pos = "bottom",
+          axis.tickscol = "gray")
+my_data <- data.frame(
+  Country = c("Australia","Belgica","Chile","Croacia","Republica checa","Dinamarca","Finlandia",
+              "Francia","Georgia","Alemania","Hungria","Islandia","Israel","Japon","Corea del sur",
+              "Latvia","Lituania","Nueva Zelanda","Noruega","Rusia","Eslovaquia","Eslovenia",
+              "Africa del sur","España","Suecia","Suiza","Turquia","UK","US"),
+  Redistribution = c(31.1,48.3,69.4,70.0,27.9,29.2,47.4,53.0,54.8,34.8,47.8,54.3,48.9,29.5,
+                     38.6,44.4,46.7,33.5,44.9,51.5,49.2,62.0,40.3,60.7,35.3,15.8,
+                     55.2,33.3,27.4)/100)
+
+my_data <- my_data %>% arrange(Redistribution)
+
+my_data$fill1 <- c("gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85",
+           "gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85",
+           "gray85","gray85","gray85","gray38","gray85")
+nrow(my_data)
+
+
+
+g5=ggplot(my_data, aes(x=reorder(Country,Redistribution),y=Redistribution)) + 
+  geom_bar(stat="identity", position="dodge",fill=my_data$fill1,colour="black", show.legend=FALSE) +
+  geom_text(aes(label=paste(Redistribution*100)),hjust=-0.2,size=3.5) +
+  geom_hline(yintercept =0.455,size=0.8,colour="gray38",linetype="dashed") +
+  scale_y_continuous(breaks=seq(0,72,20)/100,limits=c(0,72)/100,labels = scales::percent_format(accuracy = 1 )) +
+  labs(x=NULL,y="Sí, sin ninguna duda") +
+  coord_flip() +
+  annotate("text", x="Republica checa", y=0.545, label="Promedio: 45,5",size=4,colour="black") +
+  ggtitle(str_wrap("¿Es responsabilidad del gobierno reducir las diferencias de ingreso entre ricos y pobres?",75)) + theme(plot.title = element_text(hjust = 0)) +
+  theme(legend.title = element_text(size = 10),
+        legend.text = element_text(size = 10),
+        legend.position = "bottom",
+        axis.text=element_text(size=12),
+        axis.title.y = element_text(size=12, face="bold"),
+        axis.text.y.left = element_text(hjust = 1),
+        plot.title=element_text(hjust=0,size = 14,face = "italic"))+
+  labs(caption = "Fuente: ISSP 2016 - Role of Goverment")
+g5
+
+# LAPOP
+# El Estado chileno debe implementar políticas firmes para reducir la desigualdad de ingresos entre ricos y pobres. ¿Hasta qué punto está de acuerdo o en desacuerdo con esta frase?
+
+# Ahora, vamos a usar una escalera en donde el número 1 representa “muy en desacuerdo” y el número 7 representa “muy de acuerdo”. Un número entre el 1 y el 7, representa un puntaje intermedio.
+
+my_data1 <- data.frame(
+  Country = c("Argentina","Bolivia","Brasil","Chile","Colombia","Costa Rica",
+              "Rep. Dominicana","Ecuador","El Salvador","Guatemala","Honduras","Mexico",
+              "Nicaragua","Panama","Paraguay","Peru","Uruguay","Venezuela"),
+  Redistribution = c(63.56,46.25,56.39,65.63,57.94,62.73,
+                     65.98,44.66,53.07,50.93,56.20,55.18,
+                     53.56,52.96,46.93,51.27,61.05,37.65)/100)
+
+my_data1 <- my_data1 %>% arrange(Redistribution)
+
+my_data1$fill2 <- c("gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85",
+           "gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray85","gray38",
+           "gray85")
+
+g6=ggplot(my_data1, aes(x=reorder(Country,Redistribution),y=Redistribution)) + 
+  geom_bar(stat="identity", position="dodge",fill=my_data1$fill2,colour="black", show.legend=FALSE) +
+  geom_text(aes(label=paste(Redistribution*100)),hjust=-0.2,size=3.5) +
+  geom_hline(yintercept =0.5455,size=0.8,colour="gray38",linetype="dashed") +
+  scale_y_continuous(breaks=seq(0,70,20)/100,limits=c(0,80)/100,labels = scales::percent_format(accuracy = 1 )) +
+  labs(x=NULL,y="Alto nivel de apoyo") +
+  coord_flip() +
+  annotate("text", x="Ecuador", y=0.67, label="Promedio:54,55",size=4,colour="black") +
+  ggtitle(str_wrap("El Estado debe implementar políticas firmes para reducir la desigualdad de ingresos entre ricos y pobres",75)) + theme(plot.title = element_text(hjust = 0)) +
+  theme(legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        legend.position = "bottom",
+        axis.text=element_text(size=12),
+        axis.title.y = element_text(size=12, face="bold"),
+        axis.text.y.left = element_text(hjust = 1),
+        plot.title=element_text(hjust=0,size = 14,face = "italic")) +
+  labs(caption = "Fuente:  Latin American Public Opinion Project (2016/2017)")
+g6
+
+pref1 <- grid.arrange(g5,g6,ncol=2)	   
+
+ggsave(pref1,filename = "output/images/redist_by-country.png",device = "png",width = 40,height = 20,dpi ="retina",units = "cm")
+```
+
+
+
+
+```{r}
+# --------------- Figura 6 ----------------- 
+
+cl16 <-issp16 %>% filter(country==152) %>% select(gsalud=v14,geduc=v16,gpension=v18,gunemp=v19,WEIGHT) %>% na.omit()
+
+cl16[cl16==8] <- NA
+cl16[cl16==9] <- NA
+
+cl16$gsalud   <- car::recode(cl16$gsalud,  recode="1:2=1;4:5=2;3=3")
+cl16$geduc    <- car::recode(cl16$geduc   , recode="1:2=1;4:5=2;3=3")
+cl16$gpension <- car::recode(cl16$gpension, recode="1:2=1;4:5=2;3=3")
+cl16$gunemp   <- car::recode(cl16$gunemp  , recode="1:2=1;4:5=2;3=3")
+
+cl16 <- na.omit(cl16)
+
+# 1= Gastar más
+# 2= Gastar menos
+# 2= Gastar lo mismo
+
+# "Le voy a leer varias áreas del gasto del gobierno. Para cada una de ellas por favor dígame si a Ud. le gustaría que se gastara más o menos en cada una de ellas"
+# "Recuerde que si Ud. dice “mucho más”, podría ser necesario aumentar los impuestos"
+
+
+gov1<- plot_likert(cl16[,c("gsalud","geduc","gpension","gunemp")],cat.neutral = 3,values="sum.outside",
+                   axis.labels = c("Salud","Educación","Mejores pensiones","Beneficio desempleo"),
+                   show.n = F,reverse.scale = FALSE,weight.by = cl16$WEIGHT) +
+  labs(title ="Areas de gasto del gobierno. Dígame si a Ud. le gustaría que se gastara más o menos en cada una de ellas.",
+       subtitle = "'Mucho más', podría ser necesario aumentar los impuestos.", 
+       caption = "International Social Survey Programme - Role of Goverment 2016 (n=1349). Análisis incluyen ponderadores.")+ theme_classic()+
+  theme(axis.text=element_text(size=12, face="bold"),
+        axis.title=element_text(size=14,face="bold"),
+        plot.title=element_text(hjust=0.5,size = 14,face = "bold"),
+        legend.position = "bottom",
+        plot.subtitle = element_text(hjust=0.5,size = 12,face = "italic")) +
+  scale_fill_grey(labels = c("Gastar lo mismo","Gastar Menos","Gastar más" ),breaks=c("neutral",2,1))
+gov1
+
+ggsave(gov1,filename = "output/images/Figura6.png",device = "png",width = 30,height = 10,dpi = "retina",units = "cm")
+
+```
+
+```{r}
+# --------------- Figura 7 ----------------- 
+
+fuente2 <- "International Social Survey Programme - CEP Mayo 2019"
+cl19 <- rename(cl19,rgov=M2_P4_2)
+cl19$rgov <- car::recode(cl19$rgov, recode="1:2=1;4:5=2;3=3;8:9=NA")
+
+
+col19 <- cl19 %>% select(M2_P20_1:M2_P20_4,M2_P21_1,M2_P23,FACTOR) %>% rename(sind=M2_P20_1,repres=M2_P20_2,masalary=M2_P20_3,gersalary=M2_P20_4) 
+col19[col19==8] <- NA
+col19[col19==9] <- NA
+
+col19 <- na.omit(col19)
+col19 <- sjlabelled::remove_all_labels(x = col19)
+
+col19$sind      <- car::recode(col19$sind, recode="1:2=1;4:5=2;3=3",as.numeric = TRUE)
+col19$repres    <- car::recode(col19$repres, recode="1:2=1;4:5=2;3=3",as.numeric = TRUE)
+col19$masalary  <- car::recode(col19$masalary, recode="1:2=1;4:5=2;3=3",as.numeric = TRUE)
+col19$gersalary <- car::recode(col19$gersalary, recode="1:2=1;4:5=2;3=3",as.numeric = TRUE)
+
+titles2 <- c("Los trabajadores necesitan sindicatos fuertes para proteger sus intereses.",
+             "Los trabajadores deberían tener representantes en el directorio de las grandes empresas.")
+titles3 <- c("El Estado debería asegurar que los salarios de los trabajos de bajo sueldo aumenten cuando la economía crece.",
+             "El Estado debería tomar medidas para limitar los salarios de los gerentes de grandes empresas.")
+
+state1<- plot_likert(select(col19,"masalary","gersalary"),cat.neutral = 3,show.n = FALSE,values="sum.outside",
+                     axis.labels = titles3,
+                     reverse.scale = FALSE,weight.by = col19$FACTOR) + theme_classic() +
+  theme(axis.text=element_text(size=12, face="bold"),
+        axis.title=element_text(size=14,face="bold"),
+        plot.title=element_text(hjust=0.5,size = 14,face = "bold"),
+        legend.position = "bottom",
+        plot.subtitle = element_text(hjust=0,size = 12,face = "italic")) +
+  labs(caption = paste(fuente2,"(n=1244).","Análisis incluyen ponderadores."),title = "Rol Estado en la acumulación de riqueza") +
+  scale_fill_grey(labels = c("Ni de acuerdo ni en desacuerdo","En Desacuerdo","De acuerdo" ),breaks=c("neutral",2,1))
+state1
+
+ggsave(state1,filename = "output/images/Figura7.png",device = "png",width = 30,height = 10,dpi = "retina",units = "cm")
+```
 
 
 * Justicia Educación/Salud x Preferencia impuesto a los más ricos
 * Submuestra de educación alta en el stackedbarplot 
+
+
+
+
