@@ -497,6 +497,49 @@ tax_lik<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=tax,label=raw.prc)) +
 tax_lik
 
 ggsave(tax_lik,filename = "output/images/tax_lik02.png",device = "png",width = 25,height = 20,dpi = 300,units = "cm")
+
+# DONUT chart-----------------------------------
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textcolor.x = "white",
+          axis.textsize.y = 1.2,
+          axis.title.size = 1.5,
+          geom.label.size =1, #size of sum outside
+          legend.just = 1.0, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white",
+          legend.item.size = 0.5,
+          axis.tickscol = "white",
+          panel.minor.gridcol = "white",
+          panel.gridcol.y = "white")
+ggplot(frqdata, aes(x=2, y=raw.prc, fill=tax,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  coord_polar("y", start = 400) +
+  facet_grid(~year) +
+  xlim(.2,3)+
+  geom_text(data = filter(frqdata,tax %in% levels(frqdata$tax)[1:3]),
+             size = 4.5,
+             mapping =aes(x=2, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  # scale_y_continuous(name = NULL) +
+  # scale_x_discrete(name = "Preferencias por impuestos a los más ricos")+
+  labs(caption = fuente,
+       y="Preferencias por impuestos a los más ricos",
+       x=NULL)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        axis.text.y = element_blank(), 
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid")) ->dnt_pref;dnt_pref
+
+ggsave(dnt_pref,filename = "output/images/dnt_pref.png",device = "png",width = 25,height = 15,dpi = 300,units = "cm")
+
 ```
 
 ## Tax perception
@@ -580,11 +623,55 @@ taxperc_lik<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=taxperc,label=raw.prc
         legend.direction = "horizontal",
         legend.justification = "center",
         strip.text.x = element_text(size = 18),
-        strip.background = element_rect(color = "black",linetype = "solid"))
-
-taxperc_lik
+        strip.background = element_rect(color = "black",linetype = "solid"));taxperc_lik
 
 ggsave(taxperc_lik,filename = "output/images/taxperc_lik03.png",device = "png",width = 25,height = 20,dpi = 300,units = "cm")
+
+
+# DONUT chart-----------------------------------
+set_theme(base = theme_hc(),
+          theme.font = "serif", 
+          axis.textsize.x = 1.0,
+          axis.textcolor.x = "white",
+          axis.textsize.y = 1.2,
+          axis.title.size = 1.5,
+          geom.label.size =1, #size of sum outside
+          legend.just = 1.0, 
+          legend.size = 1.0,
+          legend.backgroundcol = "white",
+          legend.item.size = 0.5,
+          axis.tickscol = "white",
+          panel.minor.gridcol = "white",
+          panel.gridcol.y = "white")
+ggplot(frqdata, aes(x=2, y=raw.prc, fill=taxperc,label=raw.prc)) +
+  geom_bar(stat = "identity") + 
+  coord_polar("y", start = 400) +
+  facet_grid(~year) +
+  xlim(.2,3)+
+  geom_text(data = filter(frqdata,taxperc %in% levels(frqdata$taxperc)[1:3]),
+             size = 4.5,
+             mapping =aes(x=2, y=raw.prc,label=paste0(round(raw.prc,0),"%")),
+             position = position_stack(vjust = 0.5),
+             colour = "white")+
+  # scale_y_continuous(name = NULL) +
+  # scale_x_discrete(name = "Preferencias por impuestos a los más ricos")+
+  labs(caption = fuente,
+       y="Percepción de pago de impuestos a los más ricos",
+       x=NULL)+
+  theme(legend.position = "top") +
+  scale_fill_grey(name = NULL) +
+  guides(fill = guide_legend(reverse=T))+
+  theme(axis.title.y = element_text(angle = 90),
+        axis.text.y = element_blank(), 
+        legend.direction = "horizontal",
+        legend.justification = "center",
+        strip.text.x = element_text(size = 18),
+        strip.background = element_rect(color = "black",linetype = "solid")) ->dnt_perc;dnt_perc
+
+
+
+ggsave(dnt_perc,filename = "output/images/dnt_perc.png",device = "png",width = 25,height = 15,dpi = 300,units = "cm")
+
 ```
 
 
@@ -1028,6 +1115,11 @@ set_theme(base = theme_hc(),
 
 data <- issp %>% select(tax,hwork,year,factor) %>% filter(year %in% c(2009,2019))  %>% na.omit()
 data <- data %>% mutate(tax=car::recode(tax,recodes = "c('Una proporción mucho menor','Una menor proporción')='Una proporción menor/mucho menor';'La misma proporción'='La misma proporción';c('Una proporción mayor','Una proporción mucho mayor')='Una proporción mayor/mucho mayor'",as.factor = T))
+
+data <- data %>% mutate(hwork=car::recode(hwork,recodes = "c('No es importante','No muy importante')='No es importante/No muy importante';'Bastante importante'='Bastante importante';c('Muy importante','Esencial')='Muy importante/Esencial'",as.factor = T))
+
+
+table(data$hwork)
 # table(data$tax)
 
 frqdata<- data %>% group_by(year,hwork) %>% 
@@ -1037,10 +1129,12 @@ frqdata<- data %>% group_by(year,hwork) %>%
          hwork=str_split_fixed(string =group,pattern = ", ",n = 2)[,2]) %>% 
   rename(tax=val)
 frqdata$hwork <-as.factor(frqdata$hwork)
-frqdata$hwork <- fct_relevel(frqdata$hwork,levels(issp$hwork))
+frqdata$hwork <- fct_relevel(frqdata$hwork,levels(frqdata$hwork)[c(3,1,2)])
+
 frqdata$tax <-as.factor(frqdata$tax)
 frqdata$tax <- fct_relevel(frqdata$tax,(c('Una proporción mayor/mucho mayor',"La misma proporción","Una proporción menor/mucho menor")))
 table(frqdata$tax)
+table(frqdata$hwork)
 
 pref_hwork2<- ggplot(frqdata, aes(x=hwork, y=raw.prc, fill=tax,label=raw.prc)) +
   geom_bar(stat = "identity") + 
@@ -1490,38 +1584,43 @@ library(corrplot)
 cor99a <-  cor(tab.cor1999 %>% na.omit() %>% select(tax,red,justsalud,justeduca),use = "complete.obs")
 cor09a <-  cor(tab.cor2009 %>% na.omit() %>% select(tax,red,justsalud,justeduca),use = "complete.obs")
 cor19a <-  cor(tab.cor2019 %>% na.omit() %>% select(tax,red,justsalud,justeduca),use = "complete.obs")
-rownames <- c("A. Pref. Impuestos","B. Pref. Redistributivas","C. Just. Salud","D. Just. Educación")
+rownames <- c("A. Pref. Impuestos","B. Pref. Redistributivas","C. Igual. Salud","D. Igual. Educación")
 colnames <- c("(A)","(B)","(C)","(D)")
-rownames(cor99a) <- rownames; colnames(cor99a) <- colnames
-rownames(cor09a) <- rownames; colnames(cor09a) <- colnames
-rownames(cor19a) <- rownames; colnames(cor19a) <- colnames
+rownames(cor99a) <- rownames
+colnames(cor99a) <- colnames
+rownames(cor09a) <- rownames
+colnames(cor09a) <- colnames
+rownames(cor19a) <- rownames
+colnames(cor19a) <- colnames
 
 # PLOT 1999
 png("output/images/cor1999.png",
-    width = 18,height = 13,units="cm",
+    width = 18,height = 15,units="cm",
     pointsize=12,bg="white",res=300)
-
 corrplot(
-  cor99a,
+  cor99a,title="\n 1999",
   method = "color",
   type = "upper",
   tl.col = "black",
   addCoef.col = "black",
-  diag = TRUE,
+  diag = T,
   family = "A", 
   number.font = 6,
   tl.cex =0.75,
-  number.cex = 1)
-
+  number.cex = 1.5)
+text(-0.5, 0.95, "A. Preferencia por mayores impuestos a los más ricos",font=6,cex=0.75,adj=0)
+text(-0.5, 0.80, "B. Preferencia redistributivas",font=6,adj=0,cex=0.75)
+text(-0.5, 0.65, "C. Justicia en el acceso a salud por los más ricos",font=6,adj=0,cex=0.75)
+text(-0.5, 0.5, "D. Justicia en el acceso a educación por los más ricos",font=6,adj=0,cex=0.75)
 dev.off()
 
 # PLOT 2009
 png("output/images/cor2009.png",
-    width = 18,height = 13,units="cm",
+    width = 18,height = 15,units="cm",
     pointsize=12,bg="white",res=300)
 
 corrplot(
-  cor09a,
+  cor09a,title="\n 2009",
   method = "color",
   type = "upper",
   tl.col = "black",
@@ -1530,17 +1629,19 @@ corrplot(
   family = "A", 
   number.font = 6,
   tl.cex =0.75,
-  number.cex = 1)
-
+  number.cex = 1.5)
+text(-0.5, 0.95, "A. Preferencia por mayores impuestos a los más ricos",font=6,cex=0.75,adj=0)
+text(-0.5, 0.80, "B. Preferencia redistributivas",font=6,adj=0,cex=0.75)
+text(-0.5, 0.65, "C. Justicia en el acceso a salud por los más ricos",font=6,adj=0,cex=0.75)
+text(-0.5, 0.5, "D. Justicia en el acceso a educación por los más ricos",font=6,adj=0,cex=0.75)
 dev.off()
 
 # PLOT 2019
 png("output/images/cor2019.png",
-    width = 18,height = 13,units="cm",
+    width = 18,height = 15,units="cm",
     pointsize=12,bg="white",res=300)
-
 corrplot(
-  cor19a,
+  cor19a,title="\n 2019",
   method = "color",
   type = "upper",
   tl.col = "black",
@@ -1549,7 +1650,11 @@ corrplot(
   family = "A", 
   number.font = 6,
   tl.cex =0.75,
-  number.cex = 1)
+  number.cex = 1.5)
+text(-0.5, 0.95, "A. Preferencia por mayores impuestos a los más ricos",font=6,cex=0.75,adj=0)
+text(-0.5, 0.80, "B. Preferencia redistributivas",font=6,adj=0,cex=0.75)
+text(-0.5, 0.65, "C. Justicia en el acceso a salud por los más ricos",font=6,adj=0,cex=0.75)
+text(-0.5, 0.5, "D. Justicia en el acceso a educación por los más ricos",font=6,adj=0,cex=0.75)
 dev.off()
 ```
 
