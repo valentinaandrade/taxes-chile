@@ -15,10 +15,6 @@ issp09 <- read_spss("input/data/original/cep59may-jun2009.sav")
 issp19 <- read_dta("input/data/original/ISSP2019.dta")
 
 
-view_df(issp99)
-view_df(issp09)
-view_df(issp19)
-
 #  3. Explorar -----------------------------------------------------------------
 names(issp99)
 issp99 <- issp99 %>% mutate(year = 1999,factor = pond)
@@ -487,11 +483,44 @@ issp19$sex <- car::recode(issp19$sex, recodes = c("1='Hombre';2='Mujer'"),
 table(issp19$sex)  
 
 
+# Region ------------------------------------------------------------------
+find_var(issp19, "REGION")
+
+### 1999
+issp99 <- issp99 %>% mutate(region_rm = case_when(region %in% 1:12 ~ "No RM",
+                                                  region %in% 13 ~ "RM",
+                                                  TRUE ~ NA_character_))
+
+
+
+table(issp99$region_rm)
+### 2009
+table(issp09$Fregion)
+issp09 <- issp09 %>% mutate(region_rm = case_when(Fregion %in% 1:12 ~ "No RM",
+                                                  Fregion %in% 13 ~ "RM",
+                                                  TRUE ~ NA_character_))
+
+
+
+table(issp09$region_rm)
+
+### 2019
+table(issp19$REGION)
+issp19 <- issp19 %>% mutate(region_rm = case_when(REGION %in% 1:12 ~ "No RM",
+                                                  REGION %in% 14:16 ~ "No RM",
+                                                  REGION %in% 13 ~ "RM",
+                                                  TRUE ~ NA_character_))
+
+
+
+table(issp19$region_rm)
+
+
 # 6. Merge ISSP 99-09-19 --------------------------------------------------
 
 issp <- bind_rows(issp99,issp09,issp19)
 issp <- issp %>% 
-  select(year, sex, age,pospol,ess , educ, pchhinc, pchhinc_a, tax,taxperc,red,educself,ambition,hwork,justsalud,justeduca,factor)
+  select(year, sex, age,educ, region_rm, pospol,ess , pchhinc, pchhinc_a, tax,taxperc,red,educself,ambition,hwork,justsalud,justeduca,factor)
 
 
 save(issp,file = "input/data/proc/issp.Rdata")
