@@ -1791,34 +1791,32 @@ cl16 <-issp16 %>% filter(country==152) %>% select(gsalud=v14,geduc=v16,gpension=
 
 cl16[cl16==8] <- NA
 cl16[cl16==9] <- NA
+cl16 <- cl16 %>%
+  mutate_at(vars(gsalud,geduc,gpension, gunemp), funs(as.numeric(.))) %>% 
+  mutate_at(vars(gsalud,geduc,gpension, gunemp),
+                    funs(car::recode(.,  recode="1:2='Gastar más';4:5='Gastar menos';3='Gastar lo mismo'", as.factor = T, 
+                             levels = c("Gastar más", "Gastar menos","Gastar lo mismo")))) %>% na.omit()
 
-cl16$gsalud   <- car::recode(cl16$gsalud,  recode="1:2=1;4:5=2;3=3")
-cl16$geduc    <- car::recode(cl16$geduc   , recode="1:2=1;4:5=2;3=3")
-cl16$gpension <- car::recode(cl16$gpension, recode="1:2=1;4:5=2;3=3")
-cl16$gunemp   <- car::recode(cl16$gunemp  , recode="1:2=1;4:5=2;3=3")
-
-cl16 <- na.omit(cl16)
-
-# 1= Gastar más
-# 2= Gastar menos
-# 2= Gastar lo mismo
+# 1= Gastar menos
+# 2= Gastar más
+# 3= Gastar lo mismo
 
 # "Le voy a leer varias áreas del gasto del gobierno. Para cada una de ellas por favor dígame si a Ud. le gustaría que se gastara más o menos en cada una de ellas"
 # "Recuerde que si Ud. dice “mucho más”, podría ser necesario aumentar los impuestos"
 
+set_theme(base = theme_classic(),
+          legend.pos = "bottom")
 
-gov1<- plot_likert(cl16[,c("gsalud","geduc","gpension","gunemp")],cat.neutral = 3,values="sum.outside",
-                   axis.labels = c("Salud","Educación","Mejores pensiones","Beneficio desempleo"),
-                   show.n = F,reverse.scale = FALSE,weight.by = cl16$WEIGHT) +
-  labs(title ="Areas de gasto del gobierno. Dígame si a Ud. le gustaría que se gastara más o menos en cada una de ellas.",
+gov1<- plot_likert(cl16[,c("gsalud","geduc","gpension","gunemp")],cat.neutral = 3, catcount = 2, values="sum.outside", 
+  show.prc.sign = TRUE, legend.pos = "bottom",
+                   axis.labels = c("Salud","Educación","Mejores pensiones","Beneficio desempleo"),show.n = F,reverse.scale = FALSE,weight.by = cl16$WEIGHT)  + 
+  labs(title ="Áreas de gasto del gobierno. Dígame si a Ud. le gustaría que se gastara más o menos en cada una de ellas.",
        subtitle = "'Mucho más', podría ser necesario aumentar los impuestos.", 
-       caption = "International Social Survey Programme - Role of Goverment 2016 (n=1349). Análisis incluyen ponderadores.")+ theme_classic()+
+       caption = "International Social Survey Programme - Role of Goverment 2016 (n=1349). Análisis incluyen ponderadores.")  + 
   theme(axis.text=element_text(size=12, face="bold"),
         axis.title=element_text(size=14,face="bold"),
         plot.title=element_text(hjust=0.5,size = 14,face = "bold"),
-        legend.position = "bottom",
-        plot.subtitle = element_text(hjust=0.5,size = 12,face = "italic")) +
-  scale_fill_grey(labels = c("Gastar lo mismo","Gastar Menos","Gastar más" ),breaks=c("neutral",2,1))
+        plot.subtitle = element_text(hjust=0.5,size = 12,face = "italic")) + scale_fill_grey(labels = c("Gastar lo mismo","Gastar más","Gastar menos" ),breaks=c("neutral",2,1))
 gov1
 
 ggsave(gov1,filename = "output/images/Figura6.png",device = "png",width = 30,height = 10,dpi = "retina",units = "cm")
